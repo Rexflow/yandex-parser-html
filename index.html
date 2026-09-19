@@ -131,7 +131,13 @@
                                 status.innerHTML = '<div class="status success">✅ Найдено: ' + sd.count + ' записей</div>';
                                 clearInterval(timerInterval);
                                 timer.textContent = '✅ Готово!';
-                                resultsList.innerHTML = sd.items.map(item => '<div class="result-item"><h4>'+(item.name||'—')+'</h4><p>'+(item.address||'Без адреса')+'</p><div class="meta">📞 '+(item.phone||'нет')+' | 🌐 '+(item.website||'нет')+' | ⭐ '+(item.rating||'нет')+'</div></div>').join('');
+                                resultsList.innerHTML = sd.items.map(item => {
+            const phones = (item.phones||[]).concat(item.phone?[item.phone]:[]).filter(Boolean).join(', ');
+            const emails = (item.emails||[]).filter(Boolean).join(', ');
+            const telegram = (item.telegram||[]).filter(Boolean).join(', ');
+            const contacts = [phones, emails, telegram].filter(Boolean).join(' | ');
+            return '<div class="result-item"><h4>'+(item.name||'—')+'</h4><p>'+(item.address||'Без адреса')+'</p><div class="meta">📞 '+(phones||'нет')+' | 🌐 '+(item.website||item.site||'нет')+' | ⭐ '+(item.rating||'нет')+'</div>'+(contacts?'<div class="meta">📱 '+(contacts)+'</div>':'')+'</div>';
+        }).join('');
                                 resultsCard.style.display = 'block';
                                 downloadLink.style.display = 'inline-block';
                                 downloadLink.href = '/api/download/' + data.task_id;

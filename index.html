@@ -51,6 +51,14 @@
                 <label for="query">Поисковый запрос</label>
                 <input type="text" id="query" placeholder="кафе, ресторан, автосервис..." value="кафе">
                 <label for="limit">Количество результатов</label>
+                <select id="city_select" onchange="document.getElementById('city').value=this.dataset.city||''">
+                    <option value="">— Город —</option>
+                    <option data-city="Москва" value="Москва" selected>Москва</option>
+                    <option data-city="Санкт-Петербург" value="Санкт-Петербург">Санкт-Петербург</option>
+                    <option data-city="Казань" value="Казань">Казань</option>
+                    <option data-city="Екатеринбург" value="Екатеринбург">Екатеринбург</option>
+                    <option data-city="Новосибирск" value="Новосибирск">Новосибирск</option>
+                </select>
                 <select id="limit">
                     <option value="50">50</option>
                     <option value="100" selected>100</option>

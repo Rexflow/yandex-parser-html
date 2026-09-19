@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Парсер Яндекс.Карт — Rex Flow</title>
+    <style>
+        :root {
+            --primary: #0a1628;
+            --accent: #ff6b35;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --success: #28a745;
+            --card-bg: #ffffff;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: var(--primary); background: var(--light); line-height: 1.6; }
+        .container { max-width: 900px; margin: 0 auto; padding: 0 20px; }
+        
+        .header { background: var(--primary); color: white; padding: 2.5rem 0; text-align: center; }
+        .header h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .header p { color: #b0b8c8; }
+        
+        .main { padding: 3rem 0; }
+        
+        .card { background: var(--card-bg); padding: 2rem; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); margin-bottom: 2rem; }
+        
+        label { display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--primary); }
+        input, select, textarea { width: 100%; padding: 12px 16px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; margin-bottom: 1rem; font-family: inherit; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+        
+        .btn { display: inline-block; padding: 14px 32px; border-radius: 50px; font-weight: 700; text-decoration: none; transition: all 0.3s; border: none; cursor: pointer; font-size: 1rem; }
+        .btn-primary { background: var(--accent); color: white; box-shadow: 0 4px 20px rgba(255,107,53,0.3); }
+        .btn-primary:hover { background: var(--accent-hover); transform: translateY(-2px); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        
+        .results { margin-top: 2rem; }
+        .result-item { background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; border-left: 4px solid var(--accent); }
+        .result-item h4 { margin-bottom: 0.3rem; }
+        .result-item p { color: var(--gray); font-size: 0.9rem; }
+        .result-item .meta { font-size: 0.8rem; color: var(--gray); margin-top: 0.3rem; }
+        
+        .status { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+        .status.loading { background: #fff3cd; color: #856404; }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        
+        .progress { width: 100%; height: 8px; background: #eee; border-radius: 4px; margin: 1rem 0; display: none; }
+        .progress-bar { height: 100%; background: var(--accent); border-radius: 4px; width: 0%; transition: width 0.3s; }
+        
+        .download-btn { display: inline-block; padding: 10px 20px; background: var(--success); color: white; border-radius: 8px; text-decoration: none; margin-top: 1rem; }
+        
+        .footer { background: var(--dark); color: #666; padding: 2rem 0; text-align: center; font-size: 0.9rem; }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 1.5rem; }
+            .card { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1>🗺 Парсер Яндекс.Карт</h1>
+            <p>Извлекаем данные о бизнесах: названия, адреса, телефоны, сайты, рейтинги</p>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="card">
+                <h2 style="margin-bottom: 1.5rem;">Настройки парсинга</h2>
+                
+                <label for="city">Город</label>
+                <input type="text" id="city" placeholder="Москва, Санкт-Петербург, Казань..." value="Москва">
+                
+                <label for="query">Поисковый запрос</label>
+                <input type="text" id="query" placeholder="кафе, ресторан, автосервис..." value="кафе">
+                
+                <label for="limit">Количество результатов</label>
+                <select id="limit">
+                    <option value="50">50</option>
+                    <option value="100" selected>100</option>
+                    <option value="200">200</option>
+                    <option value="500">500</option>
+                </select>
+                
+                <label for="format">Формат вывода</label>
+                <select id="format">
+                    <option value="json">JSON</option>
+                    <option value="csv">CSV</option>
+                    <option value="xlsx">Excel (XLSX)</option>
+                </select>
+                
+                <button class="btn btn-primary" id="startBtn" onclick="startParse()">▶ Начать парсинг</button>
+                
+                <div class="progress" id="progress">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                
+                <div id="status" style="margin-top: 1rem;"></div>
+            </div>
+
+            <div class="card" id="resultsCard" style="display: none;">
+                <h2 style="margin-bottom: 1rem;">Результаты</h2>
+                <div id="resultsList"></div>
+                <a id="downloadLink" class="download-btn" style="display: none;">📥 Скачать файл</a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>© 2026 Rex Flow — Парсер Яндекс.Карт</p>
+        </div>
+    </footer>
+
+    <script>
+        async function startParse() {
+            const city = document.getElementById('city').value;
+            const query = document.getElementById('query').value;
+            const limit = document.getElementById('limit').value;
+            const format = document.getElementById('format').value;
+            const btn = document.getElementById('startBtn');
+            const progress = document.getElementById('progress');
+            const progressBar = document.getElementById('progressBar');
+            const status = document.getElementById('status');
+            const resultsCard = document.getElementById('resultsCard');
+            const resultsList = document.getElementById('resultsList');
+            const downloadLink = document.getElementById('downloadLink');
+            
+            if (!city || !query) {
+                alert('Заполните город и запрос');
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.textContent = '⏳ Парсинг...';
+            progress.style.display = 'block';
+            progressBar.style.width = '10%';
+            status.innerHTML = '<div class="status loading">⏳ Запуск парсера...</div>';
+            resultsCard.style.display = 'none';
+            
+            try {
+                // Запуск парсинга
+                const response = await fetch('/api/parse', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ city, query, limit, format })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'started') {
+                    status.innerHTML = '<div class="status loading">🔄 Парсинг запущен, ID задачи: ' + data.task_id + '</div>';
+                    progressBar.style.width = '50%';
+                    
+                    // Ожидаем результат
+                    const result = await checkResult(data.task_id);
+                    
+                    if (result.status === 'completed') {
+                        progressBar.style.width = '100%';
+                        status.innerHTML = '<div class="status success">✅ Парсинг завершён! Найдено: ' + result.count + ' записей</div>';
+                        
+                        // Показываем результаты
+                        resultsList.innerHTML = result.items.map(item => `
+                            <div class="result-item">
+                                <h4>${item.name || '—'}</h4>
+                                <p>${item.address || 'Без адреса'}</p>
+                                <div class="meta">📞 ${item.phone || 'нет телефона'} | 🌐 ${item.website || 'нет сайта'} | ⭐ ${item.rating || 'нет'}</div>
+                            </div>
+                        `).join('');
+                        
+                        resultsCard.style.display = 'block';
+                        downloadLink.style.display = 'inline-block';
+                        downloadLink.href = result.download_url;
+                        downloadLink.textContent = '📥 Скачать ' + format.toUpperCase();
+                    } else {
+                        status.innerHTML = '<div class="status error">❌ Ошибка: ' + (result.error || 'Неизвестная ошибка') + '</div>';
+                    }
+                } else {
+                    status.innerHTML = '<div class="status error">❌ Ошибка запуска: ' + (data.error || 'Unknown') + '</div>';
+                }
+            } catch (err) {
+                status.innerHTML = '<div class="status error">❌ Ошибка связи: ' + err.message + '</div>';
+            }
+            
+            btn.disabled = false;
+            btn.textContent = '▶ Начать парсинг';
+            progress.style.display = 'none';
+        }
+        
+        async function checkResult(taskId) {
+            // Симуляция — в реальности здесь polling API
+            await new Promise(r => setTimeout(r, 3000));
+            return { status: 'completed', count: 42, items: [], download_url: '/tmp/result.json' };
+        }
+    </script>
+</body>
+</html>

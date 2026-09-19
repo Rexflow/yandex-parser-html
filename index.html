@@ -63,7 +63,14 @@
                 </select>
                 <button class="btn btn-primary" id="startBtn" onclick="startParse()">▶ Начать парсинг</button>
                 <div class="progress" id="progress"><div class="progress-bar" id="progressBar"></div></div>
-                <div id="status" style="margin-top: 1rem;"></div>
+                
+<div id="status" style="margin-top: 1rem;"></div>
+<div id="timer" style="margin-top: 0.5rem; font-size: 0.9rem; color: #666;"></div>
+<div class="progress" id="progress" style="margin-top: 1rem;">
+  <div class="progress-bar" id="progressBar"></div>
+</div>
+<div id="progressText" style="margin-top: 0.3rem; font-size: 0.85rem; color: #888; text-align: center;"></div>
+
             </div>
             <div class="card" id="resultsCard" style="display: none;">
                 <h2 style="margin-bottom: 1rem;">Результаты</h2>
@@ -86,12 +93,22 @@
             const resultsCard = document.getElementById('resultsCard');
             const resultsList = document.getElementById('resultsList');
             const downloadLink = document.getElementById('downloadLink');
+            let startTime = 0;
+            let timerInterval = null;
             if (!city || !query) { alert('Заполните город и запрос'); return; }
             btn.disabled = true;
             btn.textContent = '⏳ Парсинг...';
             progress.style.display = 'block';
             progressBar.style.width = '10%';
+            progressText.textContent = 'Запуск...';
             status.innerHTML = '<div class="status loading">⏳ Запуск парсера...</div>';
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const mins = Math.floor(elapsed / 60);
+                const secs = elapsed % 60;
+                timer.textContent = '⏱ ' + mins + ' мин ' + secs + ' сек';
+            }, 1000);
             resultsCard.style.display = 'none';
             try {
                 const response = await fetch('/api/parse', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ city, query, limit, format }) });
@@ -110,6 +127,8 @@
                             progressBar.style.width = '100%';
                             if (sd.count > 0) {
                                 status.innerHTML = '<div class="status success">✅ Найдено: ' + sd.count + ' записей</div>';
+                                clearInterval(timerInterval);
+                                timer.textContent = '✅ Готово!';
                                 resultsList.innerHTML = sd.items.map(item => '<div class="result-item"><h4>'+(item.name||'—')+'</h4><p>'+(item.address||'Без адреса')+'</p><div class="meta">📞 '+(item.phone||'нет')+' | 🌐 '+(item.website||'нет')+' | ⭐ '+(item.rating||'нет')+'</div></div>').join('');
                                 resultsCard.style.display = 'block';
                                 downloadLink.style.display = 'inline-block';
@@ -120,9 +139,11 @@
                             }
                         } else if (sd.status === 'error') {
                             clearInterval(interval);
+                            clearInterval(timerInterval);
+                            timer.textContent = '❌ Ошибка';
                             status.innerHTML = '<div class="status error">❌ Ошибка: '+(sd.error||'Unknown')+'</div>';
                         }
-                        if (attempts >= 60) { clearInterval(interval); status.innerHTML = '<div class="status error">⏰ Таймаут. Попробуйте позже.</div>'; }
+                        if (attempts >= 60) { clearInterval(interval); clearInterval(timerInterval); timer.textContent = '⏰ Таймаут'; status.innerHTML = '<div class="status error">⏰ Таймаут. Попробуйте позже.</div>'; }
                     }, 3000);
                 }
             } catch (err) {
@@ -131,6 +152,9 @@
             btn.disabled = false;
             btn.textContent = '▶ Начать парсинг';
             progress.style.display = 'none';
+            clearInterval(timerInterval);
+            timer.textContent = '';
+            progressText.textContent = '';
         }
     </script>
 </body>

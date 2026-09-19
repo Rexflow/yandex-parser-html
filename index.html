@@ -94,7 +94,7 @@
             status.innerHTML = '<div class="status loading">⏳ Запуск парсера...</div>';
             resultsCard.style.display = 'none';
             try {
-                const response = await fetch('/api/parse', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ city, query, limit, format }) });
+                const response = await fetch('http://89.125.188.6:18718/api/parse', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ city, query, limit, format }) });
                 const data = await response.json();
                 if (data.status === 'started') {
                     status.innerHTML = '<div class="status loading">🔄 Парсинг запущен, ID: ' + data.task_id + '</div>';
@@ -102,7 +102,7 @@
                     let attempts = 0;
                     const interval = setInterval(async () => {
                         attempts++;
-                        const s = await fetch('/api/status/' + data.task_id);
+                        const s = await fetch('http://89.125.188.6:18718/api/status/' + data.task_id);
                         const sd = await s.json();
                         progressBar.style.width = sd.progress + '%';
                         if (sd.status === 'completed') {

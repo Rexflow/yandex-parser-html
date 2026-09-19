@@ -95,6 +95,8 @@
             const downloadLink = document.getElementById('downloadLink');
             let startTime = 0;
             let timerInterval = null;
+            const timer = document.getElementById("timer");
+            const progressText = document.getElementById("progressText");
             if (!city || !query) { alert('Заполните город и запрос'); return; }
             btn.disabled = true;
             btn.textContent = '⏳ Парсинг...';
